@@ -1,0 +1,24 @@
+[HELP]
+help=
+How to start:
+
+1. Open file config.ini in program directory
+2. In section [UserPath] write path to catalog where you want keep program results
+3. In section [Cam] write cam number which you want use:
+    0- system cam
+    1- usb cam
+4. In section [Test] write in seconds how long you want test cam.
+
+Example:
+
+[UserPath]
+
+save_resoult_path=/home/
+
+[Cam]
+
+selected_cam=0
+
+[Test]
+
+test_value=300
