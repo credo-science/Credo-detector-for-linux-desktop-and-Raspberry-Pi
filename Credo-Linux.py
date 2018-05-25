@@ -3,14 +3,15 @@
 from __future__ import unicode_literals
 from datetime import datetime, date
 from configparser import ConfigParser
+from cv2 import CAP_PROP_FPS
 import numpy as np
 import time
-import cv2
-from cv2 import CAP_PROP_FPS
+import cv2 # CV2 - Important module, installation on raspberry zero take 13 hours
 import os
 
 
-os.system("sudo modprobe bcm2835-v4l2")
+os.system("sudo modprobe bcm2835-v4l2") # command in terminal, that enable pi camera in cv2 module.
+                                        # In desktop linux unnecessary, but script still work.
 local_path = os.path.dirname(os.path.abspath(__file__))
 cfg = ConfigParser()
 cfg.read(local_path + '/config.ini')
@@ -79,7 +80,6 @@ while test_number < int(test_value):
     try:
         time_dat = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")[:-3]
         test_number += 1
-        ret, frame = cam_read.read()
         return_value, image = cam_read.read()
         test_data = np.array(image)
         test_data_crop = test_data[new_x + 10:new_x - 10, new_y + 10:new_y - 10]
@@ -91,6 +91,7 @@ while test_number < int(test_value):
         time.sleep(1)
 
     except KeyboardInterrupt:
+        cam_read.release()
         exit()
 
 print('\n')
@@ -102,6 +103,9 @@ print("Maximum value: " + str(max(max_value)))
 print("Average of maximum values: " + str(avg_max_value))
 print(" ")
 time.sleep(1)
+
+# Calibration show max value and average of max value. In my opinion is unnecessary when we want catch bright particles.
+# I usually set in config file calibration value as 1 and then threshold as 60.
 
 def threshold_choice():
     global threshold
@@ -147,16 +151,12 @@ os.system("reset")
 while True:
     try:
         time_dat = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")[:-3]
-        c_time=time.time()
         sample_number += 1
         new_x = 0
         new_y = 0
         ret, frame = cam_read.read()
         data = np.array(frame)
         data_crop = data[new_x + 1:new_x - 1, new_y + 1:new_y - 1]
-        #report = open(str(path) + "/wykres" + ".txt", "a")
-        #report.write(
-        #    str(time_dat) + "," + str(float(np.max(data_crop))) +','+ str(threshold)+ ' \n')
         print('\r'+ str(sample_number)+" | "+str(sample_save),end='')
         time.sleep(0.000001)
         if np.max(data_crop) >= int(threshold):
@@ -198,13 +198,5 @@ while True:
                 pass
 
     except KeyboardInterrupt:
+        cam_read.release()
         exit()
-
-    if cv2.waitKey(1) & 0xFF == ord('x'):
-        break
-
-cam_read.release()
-cv2.destroyAllWindows()
-
-
-
