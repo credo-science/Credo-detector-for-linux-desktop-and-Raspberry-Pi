@@ -5,14 +5,12 @@ from datetime import datetime, date
 from configparser import ConfigParser
 import numpy as np
 import time
-#CV2 - Important module, installation on raspberry zero take 13 hours
-import cv2 
+import cv2
 from cv2 import CAP_PROP_FPS
 import os
 
 
-os.system("sudo modprobe bcm2835-v4l2") #command in terminal, that enable pi camera in cv2 module.
-                                        #In desktop linux unnecessary, but script still work.
+os.system("sudo modprobe bcm2835-v4l2")
 local_path = os.path.dirname(os.path.abspath(__file__))
 cfg = ConfigParser()
 cfg.read(local_path + '/config.ini')
@@ -21,7 +19,7 @@ test_value = cfg.get('Test', 'test_value')
 cam_number = cfg.get('Cam', 'selected_cam')
 
 print("""
-Credo-Linux/Raspberry
+Credo-Raspberry
 Author: Tomasz Pluciński
 
 
@@ -86,7 +84,7 @@ while test_number < int(test_value):
         test_data = np.array(image)
         test_data_crop = test_data[new_x + 10:new_x - 10, new_y + 10:new_y - 10]
         max_value.append(np.max(test_data_crop))
-        print('\r' + "Test no.: " + str(test_number) + " /300" +
+        print('\r' + "Test no.: " + str(test_number) + "/" + str(test_value) +
               '  ' + "Max: " + str(round(np.max(test_data_crop), 3)) +
               '  ' + "Average: " + str(round(np.average(test_data_crop), 4)) +
               '  ' + "Exit ctrl+c", end='')
@@ -104,10 +102,6 @@ print("Maximum value: " + str(max(max_value)))
 print("Average of maximum values: " + str(avg_max_value))
 print(" ")
 time.sleep(1)
-
-
-#Calibration show max value and average of max value. In my opinion is unnecessary when we want catch bright particles. 
-#I usually set in config file calibration value as 1 and then threshold as 60.
 
 def threshold_choice():
     global threshold
@@ -153,12 +147,16 @@ os.system("reset")
 while True:
     try:
         time_dat = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")[:-3]
+        c_time=time.time()
         sample_number += 1
         new_x = 0
         new_y = 0
         ret, frame = cam_read.read()
         data = np.array(frame)
         data_crop = data[new_x + 1:new_x - 1, new_y + 1:new_y - 1]
+        #report = open(str(path) + "/wykres" + ".txt", "a")
+        #report.write(
+        #    str(time_dat) + "," + str(float(np.max(data_crop))) +','+ str(threshold)+ ' \n')
         print('\r'+ str(sample_number)+" | "+str(sample_save),end='')
         time.sleep(0.000001)
         if np.max(data_crop) >= int(threshold):
