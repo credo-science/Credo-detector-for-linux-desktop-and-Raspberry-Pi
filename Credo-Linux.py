@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
-from __future__ import unicode_literals
-from datetime import datetime, date
-from configparser import ConfigParser
-from cv2 import CAP_PROP_FPS
-import numpy as np
-import time
-import cv2 # CV2 - Important module, installation on raspberry zero take 13 hours
 import os
+import time
+import numpy as np
+from datetime import datetime
+from configparser import ConfigParser
+import cv2  # CV2 - Important module, installation on raspberry zero take 13 hours
+from cv2 import CAP_PROP_FPS
+from cv2 import CAP_PROP_BRIGHTNESS
 
-
-os.system("sudo modprobe bcm2835-v4l2") # command in terminal, that enable pi camera in cv2 module.
-                                        # In desktop linux unnecessary, but script still work.
+# command in terminal, that enable pi camera in cv2 module.
+# In desktop linux with usb camera unnecessary, but script still work.
+os.system("sudo modprobe bcm2835-v4l2")
 local_path = os.path.dirname(os.path.abspath(__file__))
 cfg = ConfigParser()
 cfg.read(local_path + '/config.ini')
 path = cfg.get('UserPath', 'save_results_path')
 test_value = cfg.get('Test', 'test_value')
+default_threshold = cfg.get('Test', 'default_threshold')
 cam_number = cfg.get('Cam', 'selected_cam')
 
 print("""
@@ -61,15 +62,14 @@ def samples_path():
 
 samples_path()
 
-print("")
-print("")
+print("\n")
+print("\n")
 os.system("reset")
 print("Calibration...")
 cam_read = cv2.VideoCapture(int(cam_number))
-cam_read.set(CAP_PROP_FPS,30)
-sample_number = 0
-sample_save = 0
-test_number = 0
+cam_read.set(CAP_PROP_FPS, 30)
+cam_read.set(CAP_PROP_BRIGHTNESS, 0.5)
+sample_number = sample_save = test_number = 0
 max_value = []
 new_x = 0
 new_y = 1
@@ -84,10 +84,10 @@ while test_number < int(test_value):
         test_data = np.array(image)
         test_data_crop = test_data[new_x + 10:new_x - 10, new_y + 10:new_y - 10]
         max_value.append(np.max(test_data_crop))
-        print('\r' + "Test no.: " + str(test_number) + "/" + str(test_value) +
-              '  ' + "Max: " + str(round(np.max(test_data_crop), 3)) +
-              '  ' + "Average: " + str(round(np.average(test_data_crop), 4)) +
-              '  ' + "Exit ctrl+c", end='')
+        print('\r', "Test no.:", test_number, "/", test_value,
+              "Max:", np.max(test_data_crop),
+              "Average:", round(np.average(test_data_crop), 4),
+              "Exit ctrl+c", end='')
         time.sleep(1)
 
     except KeyboardInterrupt:
@@ -98,11 +98,12 @@ print('\n')
 print("Calibration completed")
 time.sleep(1)
 avg_max_value = (sum(max_value) / len(max_value))
-print(" ")
+print("\n")
 print("Maximum value: " + str(max(max_value)))
 print("Average of maximum values: " + str(avg_max_value))
-print(" ")
+print("\n")
 time.sleep(1)
+
 
 # Calibration show max value and average of max value. In my opinion is unnecessary when we want catch bright particles.
 # I usually set in config file calibration value as 1 and then threshold as 60.
@@ -111,29 +112,19 @@ def threshold_choice():
     global threshold
     select_threshold = input(
         """Choose the sampling threshold:
-            1: 120%
-            2: 150%
-            3: 200%
-            4: 250%
-            5: custom option""")
-
+            1: Default threshold
+            2: Custom option""")
     if select_threshold == "1":
-        threshold = avg_max_value * 1.2
+        threshold = default_threshold
     elif select_threshold == "2":
-        threshold = avg_max_value * 1.5
-    elif select_threshold == "3":
-        threshold = avg_max_value * 2
-    elif select_threshold == "4":
-        threshold = avg_max_value * 2.5
-    elif select_threshold == "5":
-        if  True:
+        if True:
             try:
                 threshold = int(input("Enter a value from the range 0-255"))
             except ValueError:
                 print("Incorrect value")
                 time.sleep(1)
                 threshold_choice()
-        if 0<int(threshold)<255:
+        if 0 < int(threshold) < 255:
             pass
         else:
             print("Incorrect value")
@@ -152,44 +143,40 @@ while True:
     try:
         time_dat = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")[:-3]
         sample_number += 1
-        new_x = 0
-        new_y = 0
+        new_x = new_y = 0
         ret, frame = cam_read.read()
         data = np.array(frame)
-        data_crop = data[new_x + 1:new_x - 1, new_y + 1:new_y - 1]
-        print('\r'+ str(sample_number)+" | "+str(sample_save),end='')
+        print('\r' + str(sample_number) + " | " + str(sample_save), end='')
         time.sleep(0.000001)
-        if np.max(data_crop) >= int(threshold):
-            max_value_x_all = (np.where(data_crop == np.max(data_crop))[1])
-            max_value_y_all = (np.where(data_crop == np.max(data_crop))[0])
-            max_value_x_first = max_value_x_all[0] - 5
-            max_value_y_first = max_value_y_all[0] - 5
-            if max_value_x_first >=11 and max_value_y_first >= 11:
-                img_crop = data_crop[max_value_y_first:max_value_y_first + 10, max_value_x_first:max_value_x_first + 10]
+        if np.max(data) >= int(threshold):
+            all_coordinate_x = (np.where(data == np.max(data))[1])
+            all_coordinate_y = (np.where(data == np.max(data))[0])
+            chosen_coordinate_x = all_coordinate_x[0] - 5
+            chosen_coordinate_y = all_coordinate_y[0] - 5
+            if chosen_coordinate_x >= 11 and chosen_coordinate_y >= 11:
+                img_crop = data[chosen_coordinate_y:chosen_coordinate_y + 10,
+                                chosen_coordinate_x:chosen_coordinate_x + 10]
                 r = 500.0 / img_crop.shape[1]
                 dim = (500, int(img_crop.shape[0] * r))
                 sample_save = sample_save + 1
                 if img_crop is None:
                     pass
                 else:
+                    print(time_dat, sample_number, chosen_coordinate_x, chosen_coordinate_y,
+                          round(np.average(data), 4), np.max(data),
+                          sep=',', file=open(str(path) + "/Report.txt", "a"))
                     img_zoom = cv2.resize(img_crop, dim, interpolation=cv2.INTER_AREA)
-                    report = open(str(path) + "/Report" + ".txt", "a")
-                    report.write(
-                        time_dat + ","+ str(float(sample_number)) + ","+str(
-                            max_value_x_first) + "," +str(
-                            max_value_y_first) + "," +str(
-                            float(round(np.average(data_crop), 4))) + "," + str(
-                            float(np.max(data_crop))) + ' \n')
-                    cv2.putText(img_zoom, "x: " + str(max_value_x_first) + " " +
-                                "y: " + str(max_value_y_first) + " " + 'Average: ' + str(round(np.average(img_zoom), 4))
-                                + " " + "Max: " + str(np.max(img_zoom)), (10, 490), font, 0.5,
+                    cv2.putText(img_zoom, "x: " + str(chosen_coordinate_x) + " " +
+                                "y: " + str(chosen_coordinate_y) + " " +
+                                'Average: ' + str(round(np.average(img_zoom), 4)) +
+                                " " + "Max: " + str(np.max(img_zoom)), (10, 490), font, 0.5,
                                 (255, 255, 255), 1, cv2.LINE_AA)
-                    cv2.putText(data_crop, "x: " + str(max_value_x_first) + " " + "y: " + str(max_value_y_first) +
-                                " " + "Average: " + str(round(np.average(data_crop), 4)) + " " + "Max: " +
-                                str(np.max(data_crop)), (10, 450), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-                    gray_data = cv2.cvtColor(data_crop, cv2.COLOR_BGR2GRAY)
-                    cv2.rectangle(gray_data, (max_value_x_first, max_value_y_first),
-                                  (max_value_x_first + 10, max_value_y_first + 10), (255, 255, 255), 1)
+                    cv2.putText(data, "x: " + str(chosen_coordinate_x) + " " + "y: " + str(chosen_coordinate_y) +
+                                " " + "Average: " + str(round(np.average(data), 4)) + " " + "Max: " +
+                                str(np.max(data)), (10, 450), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                    gray_data = cv2.cvtColor(data, cv2.COLOR_BGR2GRAY)
+                    cv2.rectangle(gray_data, (chosen_coordinate_x, chosen_coordinate_y),
+                                  (chosen_coordinate_x + 10, chosen_coordinate_y + 10), (255, 255, 255), 1)
                     gray_img_zoom = cv2.cvtColor(img_zoom, cv2.COLOR_BGR2GRAY)
                     cv2.imwrite(str(path) + "/" + str(time_dat) + " Picture no. %i.jpeg" % sample_number, gray_data)
                     cv2.imwrite(str(path) + "/" + str(time_dat) + " Sample no. %i.jpeg" % sample_number, gray_img_zoom)
