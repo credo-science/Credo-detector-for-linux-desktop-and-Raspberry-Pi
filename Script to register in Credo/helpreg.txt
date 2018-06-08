@@ -1,0 +1,15 @@
+To register in Credo you must write correct data in the register registerconfig.ini file.
+
+Example:
+
+email= mail@mail.com
+username= Adam666
+display_name= hotadam
+password= password
+team= raspberry
+language= eng
+device_id= pi0
+device_type= raspberry
+device_model= zero
+system_version= raspbian
+app_version= 1
