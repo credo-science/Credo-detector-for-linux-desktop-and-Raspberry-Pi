@@ -1,9 +1,32 @@
 [HELP]
-help=
+
+1. Registration:
+
+To register in Credo you must write correct data in the register
+regconfig.ini file in program directory.
+
+Example:
+
+email= mail@mail.com
+username= Adam666
+display_name= hotadam
+password= password
+team= raspberry
+language= eng
+device_id= pi0
+device_type= raspberry
+device_model= zero
+system_version= raspbian
+app_version= 1
+
+
+2. Calibration and detection:
+
 How to start:
 
 1. Open file config.ini in program directory
-2. In section [UserPath] write path to catalog where you want keep program results
+2. In section [UserPath] write path to catalog where you want keep program
+   results
 3. In section [Cam] [test_value] write cam number which you want use:
     0- system cam
     1- usb cam

@@ -1,0 +1,18 @@
+Version 1.0.0 changelog:
+
+- Now my script is connect and send data to https://api.credo.science
+- Added option to register in https://api.credo.science from one script - Credo-Raspberry/Linux
+- Added option to save detection files while internet connection is off and send them later (from menu or with first detection)
+- Double area of particles photo
+- Removed some options that were unnecessary for Credo project (two types of photo, report of calibration, text on photo)
+- Updated help file
+- Updated config file
+- Updated menu
+- And more smal fixes
+
+To do in next version:
+
+-  Option to get photo of many particles on one camera frames
+
+
+If you have questions or you want help me with Credo-Linux/Raspberry project send message to: prawdziwytomasz@gmail.com
