@@ -127,7 +127,7 @@ def old_detection_file():
                         old_list.remove(item)
 
 
-def credo_detection(detection_picture):
+def credo_detection(detection_picture, x, y):
     local_path = os.path.dirname(os.path.abspath(__file__))
     urllib3.disable_warnings()
     cfg = ConfigParser()
@@ -146,14 +146,15 @@ def credo_detection(detection_picture):
     app_version = cfg.get('Detection', 'app_version')
     system_version = cfg.get('Detection', 'system_version')
     device_type = cfg.get('Detection', 'device_type')
-    linux_time = time.time()
-    linux_time_millisecond = [item for item in str(linux_time) if item != '.']
-    linux_time_millisecond_format = int(''.join(linux_time_millisecond)[:13])
+    x = x
+    y = y
     detection = {"detections": [{"frame_content": detection_picture,
-                                 "timestamp": '%d' % linux_time_millisecond_format,
+                                 "timestamp": int(linux_time()),
                                  "latitude": latitude,
                                  "longitude": longitude, "altitude": altitude,
                                  "accuracy": accuracy,
+                                 "x": x,
+                                 "y": y,
                                  "provider": provider, "width": width, "height": height,
                                  "id": id_detection}],
                  "device_id": device_id, "androidVersion": androidversion,
@@ -170,6 +171,43 @@ def credo_detection(detection_picture):
                       verify=False, json=data_detection,
                       headers={'Authorization': 'Token %s' % credo_login()})
     else:
-        with open("old_detection" + str(linux_time_millisecond_format) + ".json",
+        with open("old_detection" + str(linux_time()) + ".json",
                   "w") as detection_file:
             json.dump(detection, detection_file)
+
+
+def credo_ping(start_time, last_detection_time):
+    urllib3.disable_warnings()
+    local_path = os.path.dirname(os.path.abspath(__file__))
+    cfg = ConfigParser()
+    cfg.read(local_path + '/config.ini')
+    device_id = cfg.get('Detection', 'device_id')
+    device_model = cfg.get('Detection', 'device_model')
+    app_version = cfg.get('Detection', 'app_version')
+    system_version = cfg.get('Detection', 'system_version')
+    device_type = cfg.get('Detection', 'device_type')
+    timestamp = int(linux_time())
+    on_time = timestamp - start_time
+    delta_time = on_time
+
+
+    ping = {'app_version': app_version, 'device_model': device_model,
+             'device_type': device_type, 'system_version': system_version,
+             'device_id': device_id, 'delta_time': delta_time, 'on_time': on_time, 'timestamp': '%d' % timestamp }
+
+    with open("ping.json", "w") as ping_file:
+        json.dump(ping, ping_file)
+    with open("ping.json", "r") as read_ping:
+        data_ping = json.load(read_ping)
+        if internet_connection():
+           requests.post('https://api.credo.science/api/v2/ping', verify=False,
+                                          json=data_ping, headers={'Authorization': 'Token %s' % credo_login()})
+
+
+def linux_time():
+    linux_time = time.time()
+    linux_time_millisecond = [item for item in str(linux_time) if item != '.']
+    linux_time_millisecond_format = int(''.join(linux_time_millisecond)[:13])
+    return linux_time_millisecond_format
+
+
