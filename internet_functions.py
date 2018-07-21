@@ -127,7 +127,7 @@ def old_detection_file():
                         old_list.remove(item)
 
 
-def credo_detection(detection_picture, x, y):
+def credo_detection(detection_picture, x, y, time):
     local_path = os.path.dirname(os.path.abspath(__file__))
     urllib3.disable_warnings()
     cfg = ConfigParser()
@@ -149,7 +149,7 @@ def credo_detection(detection_picture, x, y):
     x = x
     y = y
     detection = {"detections": [{"frame_content": detection_picture,
-                                 "timestamp": int(linux_time()),
+                                 "timestamp": time,
                                  "latitude": latitude,
                                  "longitude": longitude, "altitude": altitude,
                                  "accuracy": accuracy,
@@ -209,5 +209,6 @@ def linux_time():
     linux_time_millisecond = [item for item in str(linux_time) if item != '.']
     linux_time_millisecond_format = int(''.join(linux_time_millisecond)[:13])
     return linux_time_millisecond_format
+
 
 

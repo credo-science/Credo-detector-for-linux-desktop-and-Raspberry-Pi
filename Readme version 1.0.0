@@ -1,3 +1,12 @@
+
+
+Version 1.2.0 changelog:
+
+- Added multi-detecion support (at last)
+
+Version 1.1.0 changelog:
+- Added ping and coordinates support
+
 Version 1.0.0 changelog:
 
 - Now my script is connect and send data to https://api.credo.science
